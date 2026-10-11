@@ -31,6 +31,10 @@ To rebuild it from source:
 4. Use joystick port 2. Hold fire to grow the stick and release to place it.
    After a miss, press fire to restart.
 
+The game disables KERNAL interrupts while it runs because the KERNAL IRQ
+handler reuses zero-page memory used by the game's indirect pointers. Reset the
+C64 to return to BASIC.
+
 The source emits a BASIC `SYS 2061` loader, so it can also be started directly
 with `SYS 2061` after loading.
 
