@@ -37,11 +37,13 @@ HILL_RIGHT = $8c
 TREE_LEAVES = $8d
 TREE_TRUNK = $8e
 CLOUD_TILE = $8f
-screen_ptr = $fb
-text_ptr = $fd
-color_ptr = $f9
+screen_ptr = $02
+text_ptr = $04
+color_ptr = $06
 
 start:
+    ; The KERNAL IRQ handler reuses the zero-page scratch used by our pointers.
+    sei
     lda #$06
     sta $d020
     lda #$0e
