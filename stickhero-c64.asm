@@ -228,6 +228,14 @@ wait_frame_end:
     rts
 
 update_wait:
+    lda fire_lockout
+    beq wait_check_fire
+    lda fire_pressed
+    bne wait_done
+    lda #0
+    sta fire_lockout
+    rts
+wait_check_fire:
     lda fire_pressed
     beq wait_done
     lda #STATE_GROW
@@ -427,6 +435,8 @@ game_over_pressed:
     lda retry_armed
     beq game_over_done
     jsr reset_game
+    lda #1
+    sta fire_lockout
 game_over_done:
     rts
 
@@ -850,6 +860,7 @@ graphics_tiles_end:
 
 state:          !byte STATE_WAIT
 retry_armed:    !byte 0
+fire_lockout:   !byte 0
 saved_port:     !byte 0
 score:          !byte 0
 base_x:         !byte 4

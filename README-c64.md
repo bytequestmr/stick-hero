@@ -29,7 +29,8 @@ To rebuild it from source:
    This recreates `stickhero-c64.prg` in the current directory.
 3. Load the PRG from disk or an emulator, then run it with `RUN`.
 4. Use joystick port 2. Hold fire to grow the stick and release to place it.
-   After a miss, press fire to restart.
+   After a miss, press fire to restart, release it, then press again to grow
+   the stick.
 
 The game disables KERNAL interrupts while it runs because the KERNAL IRQ
 handler reuses zero-page memory used by the game's indirect pointers. Reset the
