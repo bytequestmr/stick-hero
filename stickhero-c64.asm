@@ -99,6 +99,7 @@ build_round:
     sta hero_x
     lda #0
     sta retry_armed
+    sta fire_lockout
     lda #1
     sta plot_color
     jsr generate_target
