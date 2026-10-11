@@ -23,7 +23,7 @@ STATE_TURN = 2
 STATE_WALK = 3
 STATE_OVER = 4
 
-MAX_STICK = 16
+MAX_STICK = 128
 PLATFORM_Y = 21
 HERO_Y = 20
 STICK_VERTICAL = $85
@@ -37,6 +37,13 @@ HILL_RIGHT = $8c
 TREE_LEAVES = $8d
 TREE_TRUNK = $8e
 CLOUD_TILE = $8f
+CLOUD_TOP_LEFT = $9e
+CLOUD_TOP_MIDDLE = $9f
+CLOUD_TOP_RIGHT = $a0
+CLOUD_BOTTOM_LEFT = $a1
+CLOUD_BOTTOM_MIDDLE = $a2
+CLOUD_BOTTOM_RIGHT = $a3
+TREE_TOP = $a4
 screen_ptr = $02
 text_ptr = $04
 color_ptr = $06
@@ -54,7 +61,7 @@ start:
     sta $dc00
     lda #$06
     sta $d020
-    lda #$0e
+    lda #$03
     sta $d021
     jsr setup_graphics
     jsr reset_game
@@ -198,9 +205,12 @@ install_graphics_tiles:
     sta screen_ptr
     lda #>$2428
     sta screen_ptr+1
-    ldx #graphics_tiles_end-graphics_tiles
-    ldy #0
+    lda #<(graphics_tiles_end-graphics_tiles)
+    sta tile_bytes_left
+    lda #>(graphics_tiles_end-graphics_tiles)
+    sta tile_bytes_left+1
 copy_tile_bytes:
+    ldy #0
     lda (text_ptr),y
     sta (screen_ptr),y
     inc text_ptr
@@ -211,7 +221,13 @@ tile_source_ready:
     bne tile_destination_ready
     inc screen_ptr+1
 tile_destination_ready:
-    dex
+    lda tile_bytes_left
+    bne tile_count_low
+    dec tile_bytes_left+1
+tile_count_low:
+    dec tile_bytes_left
+    lda tile_bytes_left
+    ora tile_bytes_left+1
     bne copy_tile_bytes
     rts
 
@@ -270,20 +286,42 @@ grow_stick:
     cmp #MAX_STICK
     bcs grow_done
     inc stick_len
-    jsr get_anchor
+    jsr draw_vertical_stick_tip
+grow_done:
+    rts
+
+draw_vertical_stick_tip:
+    lda stick_len
+    lsr
+    lsr
+    lsr
+    sta segment_count
+    lda stick_len
+    and #$07
+    beq vertical_tip_full_cell
+    inc segment_count
+vertical_tip_full_cell:
     lda #HERO_Y
     sec
-    sbc stick_len
+    sbc segment_count
     sta draw_y
+    jsr get_anchor
     lda anchor_x
     sta draw_x
-    lda #$00
+    lda #0
     sta plot_color
+    lda stick_len
+    and #$07
+    beq vertical_tip_solid
+    clc
+    adc #$8f
+    bne vertical_tip_plot
+vertical_tip_solid:
     lda #STICK_VERTICAL
+vertical_tip_plot:
     jsr plot
     lda #1
     sta plot_color
-grow_done:
     rts
 
 update_turn:
@@ -301,7 +339,16 @@ resolve_stick:
     jsr get_anchor
     lda anchor_x
     clc
-    adc stick_len
+    adc #1
+    sta stick_tip
+    lda stick_len
+    sec
+    sbc #1
+    lsr
+    lsr
+    lsr
+    clc
+    adc stick_tip
     sta stick_tip
     cmp target_x
     bcc stick_missed
@@ -343,7 +390,14 @@ start_walking:
 
 erase_vertical_stick:
     lda stick_len
+    lsr
+    lsr
+    lsr
     sta segment_count
+    lda stick_len
+    and #$07
+    beq erase_vertical_loop
+    inc segment_count
 erase_vertical_loop:
     lda segment_count
     beq erase_vertical_done
@@ -364,6 +418,9 @@ erase_vertical_done:
 draw_horizontal_stick:
     lda stick_len
     beq horizontal_done
+    lsr
+    lsr
+    lsr
     sta segment_count
     jsr get_anchor
     lda anchor_x
@@ -375,11 +432,20 @@ draw_horizontal_stick:
     lda #0
     sta plot_color
 horizontal_loop:
+    lda segment_count
+    beq horizontal_partial
     lda #STICK_HORIZONTAL
     jsr plot
     inc draw_x
     dec segment_count
-    bne horizontal_loop
+    jmp horizontal_loop
+horizontal_partial:
+    lda stick_len
+    and #$07
+    beq horizontal_done
+    clc
+    adc #$96
+    jsr plot
 horizontal_done:
     lda #1
     sta plot_color
@@ -454,6 +520,10 @@ add_point:
     cmp #255
     bcs add_point_done
     inc score
+    lda score
+    cmp high_score
+    bcc add_point_done
+    sta high_score
 add_point_done:
     jsr draw_score
     rts
@@ -525,6 +595,59 @@ count_tens:
     jmp count_tens
 draw_digits:
     lda #6
+    sta draw_x
+    lda hundreds
+    clc
+    adc #$30
+    jsr plot
+    inc draw_x
+    lda tens
+    clc
+    adc #$30
+    jsr plot
+    inc draw_x
+    lda number_work
+    clc
+    adc #$30
+    jsr plot
+
+    lda #1
+    sta draw_y
+    lda #11
+    sta draw_x
+    lda #<best_text
+    sta text_ptr
+    lda #>best_text
+    sta text_ptr+1
+    jsr draw_text
+
+    lda high_score
+    sta number_work
+    lda #0
+    sta hundreds
+count_best_hundreds:
+    lda number_work
+    cmp #100
+    bcc count_best_tens_start
+    sec
+    sbc #100
+    sta number_work
+    inc hundreds
+    jmp count_best_hundreds
+count_best_tens_start:
+    lda #0
+    sta tens
+count_best_tens:
+    lda number_work
+    cmp #10
+    bcc draw_best_digits
+    sec
+    sbc #10
+    sta number_work
+    inc tens
+    jmp count_best_tens
+draw_best_digits:
+    lda #16
     sta draw_x
     lda hundreds
     clc
@@ -775,6 +898,8 @@ controls_text:
     !byte 16,50,32,6,9,18,5,32,8,15,12,4,32,20,15,32,7,18,15,23,0
 score_text:
     !byte 19,3,15,18,5,0
+best_text:
+    !byte 2,5,19,20,0
 game_over_text:
     !byte 7,1,13,5,32,15,22,5,18,32,45,32,6,9,18,5,32,20,15,32,18,5,20,18,25,0
 blank_line:
@@ -818,16 +943,18 @@ hill_rows_end:
 
 cloud_tile_count = (cloud_tiles_end-cloud_tiles)/4
 cloud_tiles:
-    !byte 5,6,CLOUD_TILE,1
-    !byte 6,6,CLOUD_TILE,1
-    !byte 7,6,CLOUD_TILE,1
-    !byte 6,5,CLOUD_TILE,1
-    !byte 6,7,CLOUD_TILE,1
-    !byte 23,8,CLOUD_TILE,1
-    !byte 24,8,CLOUD_TILE,1
-    !byte 25,8,CLOUD_TILE,1
-    !byte 24,7,CLOUD_TILE,1
-    !byte 25,7,CLOUD_TILE,1
+    !byte 5,5,CLOUD_TOP_LEFT,1
+    !byte 6,5,CLOUD_TOP_MIDDLE,1
+    !byte 7,5,CLOUD_TOP_RIGHT,1
+    !byte 5,6,CLOUD_BOTTOM_LEFT,1
+    !byte 6,6,CLOUD_BOTTOM_MIDDLE,1
+    !byte 7,6,CLOUD_BOTTOM_RIGHT,1
+    !byte 23,7,CLOUD_TOP_LEFT,1
+    !byte 24,7,CLOUD_TOP_MIDDLE,1
+    !byte 25,7,CLOUD_TOP_RIGHT,1
+    !byte 23,8,CLOUD_BOTTOM_LEFT,1
+    !byte 24,8,CLOUD_BOTTOM_MIDDLE,1
+    !byte 25,8,CLOUD_BOTTOM_RIGHT,1
 cloud_tiles_end:
 
 tree_tile_count = (tree_tiles_end-tree_tiles)/4
@@ -836,12 +963,12 @@ tree_tiles:
     !byte 4,15,TREE_LEAVES,5
     !byte 5,15,TREE_LEAVES,5
     !byte 4,14,TREE_LEAVES,13
-    !byte 4,13,TREE_LEAVES,13
+    !byte 4,13,TREE_TOP,13
     !byte 31,15,TREE_LEAVES,5
     !byte 32,15,TREE_LEAVES,5
     !byte 33,15,TREE_LEAVES,5
     !byte 32,14,TREE_LEAVES,13
-    !byte 32,13,TREE_LEAVES,13
+    !byte 32,13,TREE_TOP,13
     !byte 4,16,TREE_TRUNK,9
     !byte 4,17,TREE_TRUNK,9
     !byte 4,18,TREE_TRUNK,9
@@ -862,9 +989,34 @@ graphics_tiles:
     !byte $00,$00,$c0,$f0,$f8,$fc,$fe,$ff
     !byte $00,$00,$03,$0f,$1f,$3f,$7f,$ff
     ; Leaf, trunk, and cloud tiles.
-    !byte $18,$3c,$7e,$db,$ff,$7e,$3c,$18
+    !byte $18,$3c,$7e,$ff,$db,$ff,$7e,$3c
     !byte $18,$18,$18,$18,$18,$3c,$3c,$3c
     !byte $00,$00,$18,$3c,$7e,$ff,$ff,$7e
+    ; Partial one-pixel-wide stick tips, one through seven pixels tall.
+    !byte $00,$00,$00,$00,$00,$00,$00,$10
+    !byte $00,$00,$00,$00,$00,$00,$10,$10
+    !byte $00,$00,$00,$00,$00,$10,$10,$10
+    !byte $00,$00,$00,$00,$10,$10,$10,$10
+    !byte $00,$00,$00,$10,$10,$10,$10,$10
+    !byte $00,$00,$10,$10,$10,$10,$10,$10
+    !byte $00,$10,$10,$10,$10,$10,$10,$10
+    ; Partial horizontal stick tips, one through seven pixels long.
+    !byte $00,$00,$00,$80,$00,$00,$00,$00
+    !byte $00,$00,$00,$c0,$00,$00,$00,$00
+    !byte $00,$00,$00,$e0,$00,$00,$00,$00
+    !byte $00,$00,$00,$f0,$00,$00,$00,$00
+    !byte $00,$00,$00,$f8,$00,$00,$00,$00
+    !byte $00,$00,$00,$fc,$00,$00,$00,$00
+    !byte $00,$00,$00,$fe,$00,$00,$00,$00
+    ; Six contiguous pixel tiles form soft, rounded cloud silhouettes.
+    !byte $00,$00,$00,$00,$00,$00,$03,$0f
+    !byte $00,$00,$18,$3c,$7e,$7e,$ff,$ff
+    !byte $00,$00,$00,$00,$00,$00,$c0,$f0
+    !byte $0f,$3f,$7f,$ff,$ff,$ff,$ff,$7e
+    !byte $ff,$ff,$ff,$ff,$ff,$ff,$ff,$7e
+    !byte $f0,$fc,$fe,$ff,$ff,$ff,$ff,$7e
+    ; A rounded crown for the distant trees.
+    !byte $00,$00,$18,$3c,$7e,$ff,$ff,$ff
 graphics_tiles_end:
 
 state:          !byte STATE_WAIT
@@ -872,6 +1024,7 @@ retry_armed:    !byte 0
 fire_lockout:   !byte 0
 saved_port:     !byte 0
 score:          !byte 0
+high_score:     !byte 0
 base_x:         !byte 4
 base_w:         !byte 8
 target_x:       !byte 17
@@ -903,28 +1056,29 @@ hill_side_x:    !byte 0
 hill_side_char: !byte 0
 hill_start_x:   !byte 0
 decoration_count: !byte 0
+tile_bytes_left: !word 0
 
 * = $2800
 hero_sprite:
-    !byte $00,$28,$00
-    !byte $00,$aa,$00
-    !byte $00,$aa,$00
-    !byte $00,$aa,$00
-    !byte $03,$ff,$c0
-    !byte $01,$55,$40
-    !byte $02,$55,$80
-    !byte $00,$55,$00
-    !byte $02,$aa,$80
-    !byte $0a,$aa,$a0
-    !byte $0a,$aa,$a0
-    !byte $02,$aa,$80
-    !byte $02,$aa,$80
-    !byte $02,$aa,$80
-    !byte $0a,$00,$a0
-    !byte $0a,$00,$a0
-    !byte $02,$82,$80
-    !byte $02,$82,$80
-    !byte $0a,$82,$a0
-    !byte $2a,$82,$a8
-    !byte $28,$00,$28
+    !byte $00,$28,$a8
+    !byte $00,$2a,$a8
+    !byte $00,$25,$68
+    !byte $00,$2f,$f8
+    !byte $00,$09,$68
+    !byte $00,$02,$50
+    !byte $00,$2a,$a8
+    !byte $00,$2b,$fa
+    !byte $00,$18,$90
+    !byte $00,$18,$90
+    !byte $00,$0a,$a8
+    !byte $00,$0a,$a8
+    !byte $00,$0b,$f8
+    !byte $00,$28,$28
+    !byte $00,$28,$28
+    !byte $00,$28,$28
+    !byte $00,$28,$28
+    !byte $00,$28,$28
+    !byte $00,$28,$28
+    !byte $00,$28,$28
+    !byte $00,$28,$28
     !byte 0
