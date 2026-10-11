@@ -109,6 +109,7 @@ build_round:
     lda #0
     sta stick_len
     sta turn_ticks
+    sta walk_step_ticks
     lda #4
     sta base_x
     lda #8
@@ -530,25 +531,51 @@ resolve_stick:
     jsr draw_horizontal_stick_sprites
     jsr get_anchor
     lda anchor_x
-    clc
-    adc #0
-    sta stick_tip
+    sta delta_work
     lda stick_len
     clc
-    adc #6
+    adc #3
     lsr
     lsr
     lsr
     clc
-    adc stick_tip
+    adc delta_work
     sta stick_tip
-    cmp target_x
-    bcc stick_missed
+    lda target_x
     sec
-    sbc target_x
-    cmp target_w
-    bcs stick_missed
-
+    sbc delta_work
+    sta delta_work
+    asl
+    asl
+    asl
+    clc
+    adc #4
+    sta threshold_work
+    lda stick_len
+    cmp threshold_work
+    bcs stick_reaches_near_edge
+    jmp stick_missed
+stick_reaches_near_edge:
+    lda delta_work
+    clc
+    adc target_w
+    bcs stick_landed
+    asl
+    bcs stick_landed
+    asl
+    bcs stick_landed
+    asl
+    bcs stick_landed
+    clc
+    adc #4
+    bcs stick_landed
+    sta threshold_work
+    lda stick_len
+    cmp threshold_work
+    bcc stick_landed
+    beq stick_landed
+    jmp stick_missed
+stick_landed:
     lda #1
     sta landed
     lda target_x
@@ -578,6 +605,9 @@ stick_missed:
 start_walking:
     lda #STATE_WALK
     sta state
+    lda #0
+    sta walk_step_ticks
+    sta walk_note_index
     rts
 
 draw_horizontal_stick_sprites:
@@ -622,8 +652,8 @@ horizontal_segment_ready:
     asl
     asl
     asl
-    clc
-    adc #4
+    sec
+    sbc #4
     sta sprite_x_work
     lda #$02
     sta sprite_mask_work
@@ -693,12 +723,20 @@ horizontal_mask_store:
     rts
 
 update_walk:
+    inc walk_step_ticks
+    lda walk_step_ticks
+    cmp #4
+    bcc walk_step_wait
+    lda #0
+    sta walk_step_ticks
     lda hero_x
     cmp move_target
     bcs walk_arrived
     inc hero_x
     jsr draw_hero
     jsr collect_cherry
+    jsr sound_walk_step
+walk_step_wait:
     rts
 
 collect_cherry:
@@ -751,9 +789,10 @@ cherry_chord_wait:
     rts
 
 walk_arrived:
+    lda #$10
+    sta $d40b
     lda landed
     beq show_game_over
-    jsr sound_crossing
     lda #4
     sta base_x
     lda #8
@@ -781,36 +820,20 @@ build_round_keep_score:
     jsr hide_stick_sprites
     rts
 
-sound_crossing:
-    lda #0
+sound_walk_step:
+    lda #$10
+    sta $d40b
+    ldx walk_note_index
+    lda walk_note_low,x
     sta $d407
-    lda #$24
+    lda walk_note_high,x
     sta $d408
     lda #$11
     sta $d40b
-    ldx #4
-crossing_note_one:
-    jsr wait_frame
-    dex
-    bne crossing_note_one
-    lda #$20
-    sta $d40b
-    ldx #2
-crossing_note_gap:
-    jsr wait_frame
-    dex
-    bne crossing_note_gap
-    lda #$2c
-    sta $d408
-    lda #$11
-    sta $d40b
-    ldx #5
-crossing_note_two:
-    jsr wait_frame
-    dex
-    bne crossing_note_two
-    lda #$20
-    sta $d40b
+    inx
+    txa
+    and #$03
+    sta walk_note_index
     rts
 
 show_game_over:
@@ -1366,6 +1389,10 @@ vertical_sprite_pointers:
     !byte $a1,$a2,$a2,$a2
 horizontal_run_masks:
     !byte $00,$80,$c0,$e0,$f0,$f8,$fc,$fe,$ff
+walk_note_low:
+    !byte $90,$62,$03,$20
+walk_note_high:
+    !byte $11,$16,$1b,$22
 
 state:          !byte STATE_WAIT
 retry_armed:    !byte 0
@@ -1417,6 +1444,10 @@ mask_work: !byte 0
 cherry_active: !byte 0
 cherry_x: !byte 0
 cherry_bonus_count: !byte 0
+delta_work: !byte 0
+threshold_work: !byte 0
+walk_step_ticks: !byte 0
+walk_note_index: !byte 0
 
 * = $2800
 hero_sprite:
