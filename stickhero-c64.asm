@@ -229,6 +229,17 @@ setup_graphics:
     sta $d029
     sta $d02a
     sta $d02b
+    lda #$08
+    sta $d405
+    sta $d40c
+    lda #$a4
+    sta $d406
+    sta $d40d
+    lda #$10
+    sta $d404
+    sta $d40b
+    lda #$0f
+    sta $d418
     rts
 
 copy_character_rom:
@@ -342,6 +353,8 @@ begin_turn:
     sta state
     lda #0
     sta turn_ticks
+    lda #$10
+    sta $d404
     rts
 
 grow_stick:
@@ -352,7 +365,17 @@ grow_stick:
     adc #2
     sta stick_len
     jsr draw_vertical_stick_sprites
+    jsr sound_grow
 grow_done:
+    rts
+
+sound_grow:
+    lda #0
+    sta $d400
+    lda #$20
+    sta $d401
+    lda #$21
+    sta $d404
     rts
 
 hide_stick_sprites:
@@ -697,6 +720,7 @@ cherry_collect_done:
 walk_arrived:
     lda landed
     beq show_game_over
+    jsr sound_crossing
     lda #4
     sta base_x
     lda #8
@@ -722,6 +746,38 @@ build_round_keep_score:
     jsr draw_scene
     jsr spawn_cherry
     jsr hide_stick_sprites
+    rts
+
+sound_crossing:
+    lda #0
+    sta $d407
+    lda #$24
+    sta $d408
+    lda #$11
+    sta $d40b
+    ldx #4
+crossing_note_one:
+    jsr wait_frame
+    dex
+    bne crossing_note_one
+    lda #$20
+    sta $d40b
+    ldx #2
+crossing_note_gap:
+    jsr wait_frame
+    dex
+    bne crossing_note_gap
+    lda #$2c
+    sta $d408
+    lda #$11
+    sta $d40b
+    ldx #5
+crossing_note_two:
+    jsr wait_frame
+    dex
+    bne crossing_note_two
+    lda #$20
+    sta $d40b
     rts
 
 show_game_over:
@@ -1240,8 +1296,8 @@ graphics_tiles:
     !byte $ff,$81,$bd,$a5,$bd,$81,$ff,$7e
     ; Speckled hill fill and softened pixel-curved slope edges.
     !byte $aa,$55,$aa,$55,$ff,$55,$aa,$ff
-    !byte $00,$00,$80,$c0,$e0,$f8,$fe,$ff
     !byte $00,$00,$01,$03,$07,$1f,$7f,$ff
+    !byte $00,$00,$80,$c0,$e0,$f8,$fe,$ff
     ; Leaf, trunk, and cloud tiles.
     !byte $18,$3c,$7e,$ff,$db,$ff,$7e,$3c
     !byte $18,$18,$18,$18,$18,$3c,$3c,$3c

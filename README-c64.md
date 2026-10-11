@@ -14,7 +14,8 @@ canopies. The hero and pixel-precise stick are VIC-II hardware sprites. The
 stick starts at the hero's right side and draws in front of the scenery.
 Cherries occasionally appear over the path; reaching one adds five points. To
 keep the port responsive, the platforms are recentered after each successful
-crossing rather than scrolling a full scene.
+crossing rather than scrolling a full scene. SID sound effects play while the
+stick grows and when the hero reaches the next platform.
 
 ## Build and run
 
