@@ -24,6 +24,9 @@ STATE_WALK = 3
 STATE_OVER = 4
 
 MAX_STICK = 128
+STICK_SEGMENT = 42
+HORIZONTAL_SEGMENT = 48
+CHERRY_BONUS = 5
 PLATFORM_Y = 21
 HERO_Y = 20
 STICK_VERTICAL = $85
@@ -118,9 +121,45 @@ build_round:
     lda #1
     sta plot_color
     jsr generate_target
+    jsr hide_stick_sprites
     jsr draw_title
     jsr draw_score
     jsr draw_scene
+    jsr spawn_cherry
+    rts
+
+spawn_cherry:
+    lda #0
+    sta cherry_active
+    lda $d015
+    and #$df
+    sta $d015
+    jsr random_byte
+    and #$03
+    bne cherry_spawn_done
+    jsr random_byte
+    and #$03
+    clc
+    adc #3
+    adc hero_x
+    sta cherry_x
+    asl
+    asl
+    asl
+    clc
+    adc #2
+    sta $d00a
+    lda #197
+    sta $d00b
+    lda $d010
+    and #$df
+    sta $d010
+    lda $d015
+    ora #$20
+    sta $d015
+    lda #1
+    sta cherry_active
+cherry_spawn_done:
     rts
 
 generate_target:
@@ -157,15 +196,39 @@ setup_graphics:
     sta $d018
     lda #1
     sta $d015
+    lda #$21
     sta $d01c
+    lda #0
+    sta $d01b
+    lda #$1e
+    sta $d017
+    lda #0
+    sta $d01d
     lda #$01
     sta $d025
     lda #$02
     sta $d026
     lda #$00
     sta $d027
+    lda #$05
+    sta $d02c
     lda #$a0
     sta $07f8
+    lda #$a1
+    sta $07f9
+    lda #$a2
+    sta $07fa
+    lda #$a3
+    sta $07fb
+    lda #$a4
+    sta $07fc
+    lda #$a5
+    sta $07fd
+    lda #$01
+    sta $d028
+    sta $d029
+    sta $d02a
+    sta $d02b
     rts
 
 copy_character_rom:
@@ -285,43 +348,146 @@ grow_stick:
     lda stick_len
     cmp #MAX_STICK
     bcs grow_done
-    inc stick_len
-    jsr draw_vertical_stick_tip
+    clc
+    adc #2
+    sta stick_len
+    jsr draw_vertical_stick_sprites
 grow_done:
     rts
 
-draw_vertical_stick_tip:
+hide_stick_sprites:
+    lda $d015
+    and #$e1
+    sta $d015
+    rts
+
+draw_vertical_stick_sprites:
+    lda #$1e
+    sta $d017
+    lda #0
+    sta $d01d
+    lda #<vertical_sprite_pointers
+    sta text_ptr
+    lda #>vertical_sprite_pointers
+    sta text_ptr+1
+    ldy #0
+    ldx #4
+set_vertical_sprite_pointers:
+    lda (text_ptr),y
+    sta $07f9,y
+    iny
+    dex
+    bne set_vertical_sprite_pointers
+
+    lda $d015
+    and #$e1
+    sta $d015
     lda stick_len
-    lsr
-    lsr
+    bne vertical_stick_nonzero
+    jmp vertical_sprites_done
+
+vertical_stick_nonzero:
+    sta top_segment_len
+vertical_find_top_segment:
+    lda top_segment_len
+    cmp #STICK_SEGMENT+1
+    bcc vertical_top_segment_ready
+    sec
+    sbc #STICK_SEGMENT
+    sta top_segment_len
+    jmp vertical_find_top_segment
+vertical_top_segment_ready:
+    lda stick_len
+    sec
+    sbc top_segment_len
+    sta remaining_len
+    lda #218
+    sec
+    sbc stick_len
+    sta sprite_y_work
+    sta $d003
+
+    lda #<vertical_sprite_partial
+    sta text_ptr
+    lda #>vertical_sprite_partial
+    sta text_ptr+1
+    lda top_segment_len
     lsr
     sta segment_count
-    lda stick_len
-    and #$07
-    beq vertical_tip_full_cell
-    inc segment_count
-vertical_tip_full_cell:
-    lda #HERO_Y
+    ldy #1
+    ldx #21
+vertical_partial_bitmap:
+    lda segment_count
+    beq vertical_partial_clear
+    dec segment_count
+    lda #$08
+    bne vertical_partial_write
+vertical_partial_clear:
+    lda #0
+vertical_partial_write:
+    sta (text_ptr),y
+vertical_partial_advance:
+    tya
+    clc
+    adc #3
+    tay
+    dex
+    bne vertical_partial_bitmap
+
+    lda $d015
+    ora #$02
+    sta $d015
+    lda #$04
+    sta sprite_enable_mask
+    lda remaining_len
+    beq vertical_sprites_done
+    lda sprite_y_work
+    clc
+    adc top_segment_len
+    sta sprite_y_work
+    ldx #5
+vertical_full_segment:
+    lda remaining_len
+    beq vertical_sprites_done
+    lda sprite_y_work
+    sta $d000,x
+    lda $d015
+    ora sprite_enable_mask
+    sta $d015
+    lda remaining_len
     sec
-    sbc segment_count
-    sta draw_y
+    sbc #STICK_SEGMENT
+    sta remaining_len
+    lda sprite_y_work
+    clc
+    adc #STICK_SEGMENT
+    sta sprite_y_work
+    cpx #9
+    beq vertical_sprites_done
+    asl sprite_enable_mask
+    inx
+    inx
+    cpx #11
+    bcc vertical_full_segment
+vertical_sprites_done:
     jsr get_anchor
     lda anchor_x
-    sta draw_x
+    asl
+    asl
+    asl
+    sec
+    sbc #8
+    sta $d002
+    sta $d004
+    sta $d006
+    sta $d008
+    lda $d010
+    and #$e1
+    sta $d010
     lda #0
-    sta plot_color
-    lda stick_len
-    and #$07
-    beq vertical_tip_solid
-    clc
-    adc #$8f
-    bne vertical_tip_plot
-vertical_tip_solid:
-    lda #STICK_VERTICAL
-vertical_tip_plot:
-    jsr plot
-    lda #1
-    sta plot_color
+    sta $d01d
+    lda #$1e
+    sta $d017
     rts
 
 update_turn:
@@ -334,16 +500,15 @@ turn_done:
     rts
 
 resolve_stick:
-    jsr erase_vertical_stick
-    jsr draw_horizontal_stick
+    jsr draw_horizontal_stick_sprites
     jsr get_anchor
     lda anchor_x
     clc
-    adc #1
+    adc #0
     sta stick_tip
     lda stick_len
-    sec
-    sbc #1
+    clc
+    adc #6
     lsr
     lsr
     lsr
@@ -388,67 +553,116 @@ start_walking:
     sta state
     rts
 
-erase_vertical_stick:
+draw_horizontal_stick_sprites:
+    lda #0
+    sta $d017
+    lda #$1e
+    sta $d01d
+    lda #$a3
+    sta $07f9
+    lda #$a3
+    sta $07fa
+    lda #$a3
+    sta $07fb
+    lda #$a4
+    sta $07fc
+    lda #198
+    sta $d003
+    sta $d005
+    sta $d007
+    sta $d009
+    lda $d015
+    and #$e1
+    sta $d015
+    lda #0
+    sta full_segments
     lda stick_len
-    lsr
-    lsr
-    lsr
-    sta segment_count
-    lda stick_len
-    and #$07
-    beq erase_vertical_loop
-    inc segment_count
-erase_vertical_loop:
-    lda segment_count
-    beq erase_vertical_done
-    lda #HERO_Y
     sec
-    sbc segment_count
-    sta draw_y
-    jsr get_anchor
-    lda anchor_x
-    sta draw_x
-    lda #$20
-    jsr plot
-    dec segment_count
-    jmp erase_vertical_loop
-erase_vertical_done:
-    rts
-
-draw_horizontal_stick:
-    lda stick_len
-    beq horizontal_done
-    lsr
-    lsr
-    lsr
-    sta segment_count
-    jsr get_anchor
-    lda anchor_x
+    sbc #1
+horizontal_count_full:
+    cmp #HORIZONTAL_SEGMENT
+    bcc horizontal_segment_ready
+    sec
+    sbc #HORIZONTAL_SEGMENT
+    inc full_segments
+    jmp horizontal_count_full
+horizontal_segment_ready:
     clc
     adc #1
-    sta draw_x
-    lda #HERO_Y
-    sta draw_y
-    lda #0
-    sta plot_color
-horizontal_loop:
-    lda segment_count
-    beq horizontal_partial
-    lda #STICK_HORIZONTAL
-    jsr plot
-    inc draw_x
-    dec segment_count
-    jmp horizontal_loop
-horizontal_partial:
-    lda stick_len
-    and #$07
-    beq horizontal_done
+    sta segment_len
+    jsr get_anchor
+    lda anchor_x
+    asl
+    asl
+    asl
     clc
-    adc #$96
-    jsr plot
-horizontal_done:
-    lda #1
-    sta plot_color
+    adc #7
+    sta sprite_x_work
+    lda #$02
+    sta sprite_mask_work
+    ldx #2
+horizontal_full_segments:
+    lda full_segments
+    beq horizontal_partial_segment
+    dec full_segments
+    lda sprite_x_work
+    sta $d000,x
+    lda $d015
+    ora sprite_mask_work
+    sta $d015
+    lda sprite_mask_work
+    asl
+    sta sprite_mask_work
+    lda sprite_x_work
+    clc
+    adc #HORIZONTAL_SEGMENT
+    sta sprite_x_work
+    inx
+    inx
+    jmp horizontal_full_segments
+horizontal_partial_segment:
+    lda sprite_x_work
+    sta $d008
+    lda $d015
+    ora #$10
+    sta $d015
+    lda segment_len
+    lsr
+    sta remaining_len
+    lda #<horizontal_run_masks
+    sta text_ptr
+    lda #>horizontal_run_masks
+    sta text_ptr+1
+    lda #<$293c
+    sta screen_ptr
+    lda #>$293c
+    sta screen_ptr+1
+    ldy #0
+horizontal_mask_byte:
+    lda remaining_len
+    cmp #9
+    bcs horizontal_mask_full_byte
+    tax
+    lda horizontal_run_masks,x
+    sta mask_work
+    lda #0
+    sta remaining_len
+    lda mask_work
+    jmp horizontal_mask_store
+horizontal_mask_full_byte:
+    sec
+    sbc #8
+    sta remaining_len
+    lda #$ff
+horizontal_mask_store:
+    sta (screen_ptr),y
+    inc screen_ptr
+    iny
+    cpy #3
+    bcc horizontal_mask_byte
+    lda $d010
+    and #$e1
+    sta $d010
     rts
 
 update_walk:
@@ -457,6 +671,27 @@ update_walk:
     bcs walk_arrived
     inc hero_x
     jsr draw_hero
+    jsr collect_cherry
+    rts
+
+collect_cherry:
+    lda cherry_active
+    beq cherry_collect_done
+    lda hero_x
+    cmp cherry_x
+    bcc cherry_collect_done
+    lda #0
+    sta cherry_active
+    lda $d015
+    and #$df
+    sta $d015
+    lda #CHERRY_BONUS
+    sta cherry_bonus_count
+cherry_bonus_loop:
+    jsr add_point
+    dec cherry_bonus_count
+    bne cherry_bonus_loop
+cherry_collect_done:
     rts
 
 walk_arrived:
@@ -479,14 +714,25 @@ build_round_keep_score:
     jsr $ffd2
     lda #STATE_WAIT
     sta state
+    lda #0
+    sta stick_len
+    sta turn_ticks
     jsr draw_title
     jsr draw_score
     jsr draw_scene
+    jsr spawn_cherry
+    jsr hide_stick_sprites
     rts
 
 show_game_over:
     lda #STATE_OVER
     sta state
+    lda $d015
+    and #$df
+    sta $d015
+    lda $d015
+    and #$df
+    sta $d015
     lda #0
     sta retry_armed
     lda #4
@@ -1019,6 +1265,11 @@ graphics_tiles:
     !byte $00,$00,$18,$3c,$7e,$ff,$ff,$ff
 graphics_tiles_end:
 
+vertical_sprite_pointers:
+    !byte $a1,$a2,$a2,$a2
+horizontal_run_masks:
+    !byte $00,$80,$c0,$e0,$f0,$f8,$fc,$fe,$ff
+
 state:          !byte STATE_WAIT
 retry_armed:    !byte 0
 fire_lockout:   !byte 0
@@ -1057,6 +1308,18 @@ hill_side_char: !byte 0
 hill_start_x:   !byte 0
 decoration_count: !byte 0
 tile_bytes_left: !word 0
+top_segment_len: !byte 0
+remaining_len: !byte 0
+segment_len: !byte 0
+full_segments: !byte 0
+sprite_y_work: !byte 0
+sprite_enable_mask: !byte 0
+sprite_x_work: !byte 0
+sprite_mask_work: !byte 0
+mask_work: !byte 0
+cherry_active: !byte 0
+cherry_x: !byte 0
+cherry_bonus_count: !byte 0
 
 * = $2800
 hero_sprite:
@@ -1081,4 +1344,89 @@ hero_sprite:
     !byte $00,$28,$28
     !byte $00,$28,$28
     !byte $00,$28,$28
+    !byte 0
+
+* = $2840
+vertical_sprite_partial:
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte 0
+
+* = $2880
+vertical_sprite_full:
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte $00,$08,$00
+    !byte 0
+
+* = $28c0
+horizontal_sprite_full:
+    !fill 60,0
+    !byte $ff,$ff,$ff
+    !byte 0
+
+* = $2900
+horizontal_sprite_partial:
+    !fill 64,0
+
+* = $2940
+cherry_sprite:
+    !byte 0,0,0
+    !byte 0,0,$30
+    !byte 0,0,$30
+    !byte 0,$0c,$30
+    !byte 0,$2a,$00
+    !byte 0,$aa,$80
+    !byte 1,$aa,$c0
+    !byte 2,$aa,$a0
+    !byte 2,$aa,$a0
+    !byte 1,$aa,$c0
+    !byte 0,$aa,$80
+    !byte 0,$2a,$00
+    !byte 0,$00,$00
+    !byte 0,$00,$00
+    !byte 0,$00,$00
+    !byte 0,$00,$00
+    !byte 0,$00,$00
+    !byte 0,$00,$00
+    !byte 0,$00,$00
+    !byte 0,$00,$00
+    !byte 0,$00,$00
     !byte 0
