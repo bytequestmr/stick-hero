@@ -12,6 +12,9 @@ recentered after each successful crossing rather than scrolling a full scene.
 
 ## Build and run
 
+The prebuilt `stickhero-c64.prg` can be loaded directly in a C64 or emulator.
+To rebuild it from source:
+
 1. Install the ACME 6502 assembler.
 2. Assemble `stickhero-c64.asm`:
 
@@ -19,7 +22,7 @@ recentered after each successful crossing rather than scrolling a full scene.
    acme stickhero-c64.asm
    ```
 
-   This creates `stickhero-c64.prg` in the current directory.
+   This recreates `stickhero-c64.prg` in the current directory.
 3. Load the PRG from disk or an emulator, then run it with `RUN`.
 4. Use joystick port 2. Hold fire to grow the stick and release to place it.
    After a miss, press fire to restart.
