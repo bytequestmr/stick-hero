@@ -26,6 +26,8 @@ STATE_OVER = 4
 MAX_STICK = 16
 PLATFORM_Y = 21
 HERO_Y = 20
+screen_ptr = $fb
+text_ptr = $fd
 
 start:
     lda #$01
@@ -567,5 +569,3 @@ text_index:     !byte 0
 number_work:    !byte 0
 hundreds:       !byte 0
 tens:           !byte 0
-screen_ptr:     !word 0
-text_ptr:       !word 0
