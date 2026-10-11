@@ -13,13 +13,13 @@ curved hills, rounded clouds against a cyan sky, and fuller, layered tree
 canopies. The hero and pixel-precise stick are VIC-II hardware sprites. The
 stick starts at the hero's right side and draws in front of the scenery.
 Cherries occasionally appear over the path; reaching one adds five points and
-plays a three-voice SID chord. Other SID sound effects play while the stick
-grows and a short melody accompanies the hero as they cross the stick. The
-hero advances smoothly in two-pixel sprite steps, with melody timing
-independent from movement;
-the cherry chord also runs without pausing the game loop. Landing is checked
-against the stick's pixel position and the platform's exact edges, with
-continuous sprite segments at their joins.
+plays a three-voice SID chord. The stick's pitch rises as it grows, a short
+placement tone plays when released, and a melody accompanies the hero as they
+cross the stick. The hero advances smoothly in two-pixel sprite steps, with
+melody timing independent from movement; the cherry chord also runs without
+pausing the game loop. Horizontal stick sprites overlap slightly at segment
+joins to prevent visual gaps while preserving the exact stick length. Landing
+is checked against the stick's pixel position and the platform's exact edges.
 To keep the port responsive, the platforms are recentered after each successful
 crossing rather than scrolling a full scene.
 
