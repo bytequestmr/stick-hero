@@ -7,8 +7,12 @@ cross the gap to the next platform. A center hit is worth two points; other
 successful landings are worth one. Missing a platform ends the game.
 
 The JavaScript Canvas graphics and animation have been adapted to the C64's
-40-column character display. To keep the port responsive, the platforms are
-recentered after each successful crossing rather than scrolling a full scene.
+40-column character display. The port copies the C64 character ROM into RAM
+and replaces a small set of glyphs with a pixel-thin stick, layered grass and
+stone platform tiles, stepped hills, trees, and clouds. The hero is a
+multicolor VIC-II hardware sprite with a head, red headband, body, arms, and
+legs. To keep the port responsive, the platforms are recentered after each
+successful crossing rather than scrolling a full scene.
 
 ## Build and run
 
