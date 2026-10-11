@@ -44,6 +44,14 @@ color_ptr = $06
 start:
     ; The KERNAL IRQ handler reuses the zero-page scratch used by our pointers.
     sei
+    ; KERNAL keyboard scanning can leave CIA1 Port A configured as outputs.
+    ; Joystick port 2 uses its lower five input lines.
+    lda $dc02
+    and #$e0
+    sta $dc02
+    lda $dc00
+    ora #$1f
+    sta $dc00
     lda #$06
     sta $d020
     lda #$0e
