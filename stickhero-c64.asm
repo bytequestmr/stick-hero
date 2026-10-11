@@ -235,9 +235,13 @@ setup_graphics:
     lda #$a4
     sta $d406
     sta $d40d
+    sta $d414
+    lda #$08
+    sta $d413
     lda #$10
     sta $d404
     sta $d40b
+    sta $d412
     lda #$0f
     sta $d418
     rts
@@ -619,7 +623,7 @@ horizontal_segment_ready:
     asl
     asl
     clc
-    adc #7
+    adc #4
     sta sprite_x_work
     lda #$02
     sta sprite_mask_work
@@ -708,6 +712,7 @@ collect_cherry:
     lda $d015
     and #$df
     sta $d015
+    jsr sound_cherry
     lda #CHERRY_BONUS
     sta cherry_bonus_count
 cherry_bonus_loop:
@@ -715,6 +720,34 @@ cherry_bonus_loop:
     dec cherry_bonus_count
     bne cherry_bonus_loop
 cherry_collect_done:
+    rts
+
+sound_cherry:
+    lda #$60
+    sta $d400
+    lda #$22
+    sta $d401
+    lda #$8e
+    sta $d407
+    lda #$2a
+    sta $d408
+    lda #$5f
+    sta $d40e
+    lda #$33
+    sta $d40f
+    lda #$11
+    sta $d404
+    sta $d40b
+    sta $d412
+    ldx #8
+cherry_chord_wait:
+    jsr wait_frame
+    dex
+    bne cherry_chord_wait
+    lda #$10
+    sta $d404
+    sta $d40b
+    sta $d412
     rts
 
 walk_arrived:
