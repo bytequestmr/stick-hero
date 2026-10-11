@@ -778,8 +778,8 @@ get_anchor:
     lda base_x
     clc
     adc base_w
-    sec
-    sbc #1
+    clc
+    adc #1
     sta anchor_x
     rts
 
@@ -1167,20 +1167,20 @@ row_hi:
 
 hill_row_count = (hill_rows_end-hill_rows)/7
 hill_rows:
-    !byte 11,0,5,HILL_FILL,13,4,HILL_RIGHT
-    !byte 12,0,7,HILL_FILL,13,6,HILL_RIGHT
-    !byte 13,0,9,HILL_FILL,13,8,HILL_RIGHT
-    !byte 14,0,11,HILL_FILL,13,10,HILL_RIGHT
-    !byte 15,0,14,HILL_FILL,13,13,HILL_RIGHT
+    !byte 11,0,3,HILL_FILL,13,2,HILL_RIGHT
+    !byte 12,0,4,HILL_FILL,13,3,HILL_RIGHT
+    !byte 13,0,6,HILL_FILL,13,5,HILL_RIGHT
+    !byte 14,0,9,HILL_FILL,13,8,HILL_RIGHT
+    !byte 15,0,13,HILL_FILL,13,12,HILL_RIGHT
     !byte 16,0,16,HILL_FILL,5,15,HILL_RIGHT
     !byte 17,0,18,HILL_FILL,5,17,HILL_RIGHT
     !byte 18,0,20,HILL_FILL,5,19,HILL_RIGHT
     !byte 19,0,22,HILL_FILL,5,21,HILL_RIGHT
-    !byte 11,34,6,HILL_FILL,13,34,HILL_LEFT
-    !byte 12,32,8,HILL_FILL,13,32,HILL_LEFT
-    !byte 13,30,10,HILL_FILL,13,30,HILL_LEFT
-    !byte 14,28,12,HILL_FILL,13,28,HILL_LEFT
-    !byte 15,26,14,HILL_FILL,13,26,HILL_LEFT
+    !byte 11,37,3,HILL_FILL,13,37,HILL_LEFT
+    !byte 12,36,4,HILL_FILL,13,36,HILL_LEFT
+    !byte 13,34,6,HILL_FILL,13,34,HILL_LEFT
+    !byte 14,31,9,HILL_FILL,13,31,HILL_LEFT
+    !byte 15,27,13,HILL_FILL,13,27,HILL_LEFT
     !byte 16,24,16,HILL_FILL,5,24,HILL_LEFT
     !byte 17,22,18,HILL_FILL,5,22,HILL_LEFT
     !byte 18,20,20,HILL_FILL,5,20,HILL_LEFT
@@ -1205,15 +1205,23 @@ cloud_tiles_end:
 
 tree_tile_count = (tree_tiles_end-tree_tiles)/4
 tree_tiles:
+    !byte 2,15,TREE_LEAVES,5
     !byte 3,15,TREE_LEAVES,5
     !byte 4,15,TREE_LEAVES,5
     !byte 5,15,TREE_LEAVES,5
+    !byte 6,15,TREE_LEAVES,5
+    !byte 3,14,TREE_LEAVES,13
     !byte 4,14,TREE_LEAVES,13
+    !byte 5,14,TREE_LEAVES,13
     !byte 4,13,TREE_TOP,13
+    !byte 30,15,TREE_LEAVES,5
     !byte 31,15,TREE_LEAVES,5
     !byte 32,15,TREE_LEAVES,5
     !byte 33,15,TREE_LEAVES,5
+    !byte 34,15,TREE_LEAVES,5
+    !byte 31,14,TREE_LEAVES,13
     !byte 32,14,TREE_LEAVES,13
+    !byte 33,14,TREE_LEAVES,13
     !byte 32,13,TREE_TOP,13
     !byte 4,16,TREE_TRUNK,9
     !byte 4,17,TREE_TRUNK,9
@@ -1230,10 +1238,10 @@ graphics_tiles:
     !byte $18,$3c,$18,$7e,$ff,$db,$ff,$7e
     !byte $ff,$aa,$d5,$ff,$aa,$55,$ff,$7e
     !byte $ff,$81,$bd,$a5,$bd,$81,$ff,$7e
-    ; Speckled hill fill and two pixel-stepped slope edges.
+    ; Speckled hill fill and softened pixel-curved slope edges.
     !byte $aa,$55,$aa,$55,$ff,$55,$aa,$ff
-    !byte $00,$00,$c0,$f0,$f8,$fc,$fe,$ff
-    !byte $00,$00,$03,$0f,$1f,$3f,$7f,$ff
+    !byte $00,$00,$80,$c0,$e0,$f8,$fe,$ff
+    !byte $00,$00,$01,$03,$07,$1f,$7f,$ff
     ; Leaf, trunk, and cloud tiles.
     !byte $18,$3c,$7e,$ff,$db,$ff,$7e,$3c
     !byte $18,$18,$18,$18,$18,$3c,$3c,$3c
