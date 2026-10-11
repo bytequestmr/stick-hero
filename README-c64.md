@@ -9,11 +9,12 @@ successful landings are worth one. Missing a platform ends the game.
 The JavaScript Canvas graphics and animation have been adapted to the C64's
 40-column character display. The port copies the C64 character ROM into RAM
 and replaces a small set of glyphs with layered grass and stone platforms,
-stepped hills, rounded clouds against a cyan sky, and trees. The hero and
-pixel-precise stick are VIC-II hardware sprites, so the stick draws in front
-of the scenery. Cherries occasionally appear over the path; reaching one adds
-five points. To keep the port responsive, the platforms are recentered after
-each successful crossing rather than scrolling a full scene.
+curved hills, rounded clouds against a cyan sky, and fuller, layered tree
+canopies. The hero and pixel-precise stick are VIC-II hardware sprites. The
+stick starts at the hero's right side and draws in front of the scenery.
+Cherries occasionally appear over the path; reaching one adds five points. To
+keep the port responsive, the platforms are recentered after each successful
+crossing rather than scrolling a full scene.
 
 ## Build and run
 
