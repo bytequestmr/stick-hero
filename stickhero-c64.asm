@@ -26,15 +26,27 @@ STATE_OVER = 4
 MAX_STICK = 16
 PLATFORM_Y = 21
 HERO_Y = 20
+STICK_VERTICAL = $85
+STICK_HORIZONTAL = $86
+GRASS_TOP = $87
+STONE_A = $88
+STONE_B = $89
+HILL_FILL = $8a
+HILL_LEFT = $8b
+HILL_RIGHT = $8c
+TREE_LEAVES = $8d
+TREE_TRUNK = $8e
+CLOUD_TILE = $8f
 screen_ptr = $fb
 text_ptr = $fd
+color_ptr = $f9
 
 start:
-    lda #$01
-    sta $0286
     lda #$06
     sta $d020
+    lda #$0e
     sta $d021
+    jsr setup_graphics
     jsr reset_game
 
 main_loop:
@@ -85,6 +97,8 @@ build_round:
     sta hero_x
     lda #0
     sta retry_armed
+    lda #1
+    sta plot_color
     jsr generate_target
     jsr draw_title
     jsr draw_score
@@ -116,6 +130,78 @@ random_byte:
     eor #$1d
 random_no_xor:
     sta random_seed
+    rts
+
+setup_graphics:
+    jsr copy_character_rom
+    jsr install_graphics_tiles
+    lda #$18
+    sta $d018
+    lda #1
+    sta $d015
+    sta $d01c
+    lda #$01
+    sta $d025
+    lda #$02
+    sta $d026
+    lda #$00
+    sta $d027
+    lda #$a0
+    sta $07f8
+    rts
+
+copy_character_rom:
+    lda $01
+    sta saved_port
+    and #$fb
+    sta $01
+    lda #<$d000
+    sta text_ptr
+    lda #>$d000
+    sta text_ptr+1
+    lda #<$2000
+    sta screen_ptr
+    lda #>$2000
+    sta screen_ptr+1
+    ldy #0
+copy_charset_page:
+    lda (text_ptr),y
+    sta (screen_ptr),y
+    iny
+    bne copy_charset_page
+    inc text_ptr+1
+    inc screen_ptr+1
+    lda text_ptr+1
+    cmp #$d8
+    bne copy_charset_page
+    lda saved_port
+    sta $01
+    rts
+
+install_graphics_tiles:
+    lda #<graphics_tiles
+    sta text_ptr
+    lda #>graphics_tiles
+    sta text_ptr+1
+    lda #<$2428
+    sta screen_ptr
+    lda #>$2428
+    sta screen_ptr+1
+    ldx #graphics_tiles_end-graphics_tiles
+    ldy #0
+copy_tile_bytes:
+    lda (text_ptr),y
+    sta (screen_ptr),y
+    inc text_ptr
+    bne tile_source_ready
+    inc text_ptr+1
+tile_source_ready:
+    inc screen_ptr
+    bne tile_destination_ready
+    inc screen_ptr+1
+tile_destination_ready:
+    dex
+    bne copy_tile_bytes
     rts
 
 read_fire:
@@ -172,8 +258,12 @@ grow_stick:
     sta draw_y
     lda anchor_x
     sta draw_x
-    lda #$23
+    lda #$00
+    sta plot_color
+    lda #STICK_VERTICAL
     jsr plot
+    lda #1
+    sta plot_color
 grow_done:
     rts
 
@@ -263,27 +353,23 @@ draw_horizontal_stick:
     sta draw_x
     lda #HERO_Y
     sta draw_y
+    lda #0
+    sta plot_color
 horizontal_loop:
-    lda #$2d
+    lda #STICK_HORIZONTAL
     jsr plot
     inc draw_x
     dec segment_count
     bne horizontal_loop
 horizontal_done:
+    lda #1
+    sta plot_color
     rts
 
 update_walk:
     lda hero_x
     cmp move_target
     bcs walk_arrived
-    lda #$20
-    sta draw_char
-    lda hero_x
-    sta draw_x
-    lda #HERO_Y
-    sta draw_y
-    lda draw_char
-    jsr plot
     inc hero_x
     jsr draw_hero
     rts
@@ -445,6 +531,11 @@ draw_scene:
     lda #>blank_line
     sta text_ptr+1
     jsr draw_text
+    jsr draw_hills
+    jsr draw_clouds
+    jsr draw_trees
+    lda #1
+    sta plot_color
     lda base_x
     sta platform_x
     lda base_w
@@ -458,33 +549,165 @@ draw_scene:
     jsr draw_hero
     rts
 
+draw_hills:
+    lda #0
+    sta text_index
+    ldx #hill_row_count
+draw_hill_loop:
+    ldy text_index
+    lda hill_rows,y
+    sta draw_y
+    iny
+    lda hill_rows,y
+    sta draw_x
+    iny
+    lda hill_rows,y
+    sta segment_count
+    iny
+    lda hill_rows,y
+    sta draw_char
+    iny
+    lda hill_rows,y
+    sta plot_color
+    iny
+    lda hill_rows,y
+    sta hill_side_x
+    iny
+    lda hill_rows,y
+    sta hill_side_char
+    iny
+    sty text_index
+    jsr fill_hill_segment
+    lda hill_side_x
+    sta draw_x
+    lda hill_side_char
+    jsr plot
+    dex
+    bne draw_hill_loop
+    rts
+
+fill_hill_segment:
+    lda draw_x
+    sta hill_start_x
+hill_fill_loop:
+    lda draw_char
+    jsr plot
+    inc draw_x
+    dec segment_count
+    bne hill_fill_loop
+    lda hill_start_x
+    sta draw_x
+    rts
+
+draw_clouds:
+    lda #<cloud_tiles
+    sta text_ptr
+    lda #>cloud_tiles
+    sta text_ptr+1
+    lda #cloud_tile_count
+    sta decoration_count
+    jmp draw_decoration_tiles
+
+draw_trees:
+    lda #<tree_tiles
+    sta text_ptr
+    lda #>tree_tiles
+    sta text_ptr+1
+    lda #tree_tile_count
+    sta decoration_count
+
+draw_decoration_tiles:
+    lda #0
+    sta text_index
+    ldx decoration_count
+draw_decoration_loop:
+    ldy text_index
+    lda (text_ptr),y
+    sta draw_x
+    iny
+    lda (text_ptr),y
+    sta draw_y
+    iny
+    lda (text_ptr),y
+    sta draw_char
+    iny
+    lda (text_ptr),y
+    sta plot_color
+    iny
+    sty text_index
+    lda draw_char
+    jsr plot
+    dex
+    bne draw_decoration_loop
+    lda #1
+    sta plot_color
+    rts
+
 draw_platform:
     lda #PLATFORM_Y
     sta draw_y
-    ldx #4
+    lda #GRASS_TOP
+    sta draw_char
+    lda #5
+    sta plot_color
+    jsr draw_platform_row
+    inc draw_y
+    lda #9
+    sta plot_color
+    ldx #3
 platform_row:
+    txa
+    and #1
+    beq platform_stone_a
+    lda #STONE_B
+    bne platform_stone_ready
+platform_stone_a:
+    lda #STONE_A
+platform_stone_ready:
+    sta draw_char
+    jsr draw_platform_row
+    inc draw_y
+    dex
+    bne platform_row
+    lda #1
+    sta plot_color
+    rts
+
+draw_platform_row:
     lda platform_x
     sta draw_x
     lda platform_w
     sta segment_count
 platform_cell:
-    lda #$3d
+    lda draw_char
     jsr plot
     inc draw_x
     dec segment_count
     bne platform_cell
-    inc draw_y
-    dex
-    bne platform_row
     rts
 
 draw_hero:
+    lda #0
+    sta hero_x_high
     lda hero_x
-    sta draw_x
-    lda #HERO_Y
-    sta draw_y
-    lda #$00
-    jsr plot
+    asl
+    rol hero_x_high
+    asl
+    rol hero_x_high
+    asl
+    rol hero_x_high
+    clc
+    adc #12
+    bcc hero_x_ready
+    inc hero_x_high
+hero_x_ready:
+    sta $d000
+    lda $d010
+    and #$fe
+    ora hero_x_high
+    sta $d010
+    lda #(50+((HERO_Y+1)*8)-21)
+    sta $d001
     rts
 
 draw_text:
@@ -513,9 +736,18 @@ plot:
     ldy draw_x
     lda plot_char
     sta (screen_ptr),y
+    lda screen_ptr
+    sta color_ptr
+    lda screen_ptr+1
+    clc
+    adc #$d4
+    sta color_ptr+1
+    ldy draw_x
+    lda plot_color
+    sta (color_ptr),y
     rts
 
-; Screen codes for the C64's default uppercase/graphics character set.
+; Screen codes in the copied C64 character ROM remain available for the HUD.
 title_text:
     !byte 19,20,9,3,11,32,8,5,18,15,32,3,54,52,0
 controls_text:
@@ -541,8 +773,82 @@ row_hi:
     !byte >$0658,>$0680,>$06a8,>$06d0,>$06f8
     !byte >$0720,>$0748,>$0770,>$0798,>$07c0
 
+hill_row_count = (hill_rows_end-hill_rows)/7
+hill_rows:
+    !byte 11,0,5,HILL_FILL,13,4,HILL_RIGHT
+    !byte 12,0,7,HILL_FILL,13,6,HILL_RIGHT
+    !byte 13,0,9,HILL_FILL,13,8,HILL_RIGHT
+    !byte 14,0,11,HILL_FILL,13,10,HILL_RIGHT
+    !byte 15,0,14,HILL_FILL,13,13,HILL_RIGHT
+    !byte 16,0,16,HILL_FILL,5,15,HILL_RIGHT
+    !byte 17,0,18,HILL_FILL,5,17,HILL_RIGHT
+    !byte 18,0,20,HILL_FILL,5,19,HILL_RIGHT
+    !byte 19,0,22,HILL_FILL,5,21,HILL_RIGHT
+    !byte 11,34,6,HILL_FILL,13,34,HILL_LEFT
+    !byte 12,32,8,HILL_FILL,13,32,HILL_LEFT
+    !byte 13,30,10,HILL_FILL,13,30,HILL_LEFT
+    !byte 14,28,12,HILL_FILL,13,28,HILL_LEFT
+    !byte 15,26,14,HILL_FILL,13,26,HILL_LEFT
+    !byte 16,24,16,HILL_FILL,5,24,HILL_LEFT
+    !byte 17,22,18,HILL_FILL,5,22,HILL_LEFT
+    !byte 18,20,20,HILL_FILL,5,20,HILL_LEFT
+    !byte 19,18,22,HILL_FILL,5,18,HILL_LEFT
+hill_rows_end:
+
+cloud_tile_count = (cloud_tiles_end-cloud_tiles)/4
+cloud_tiles:
+    !byte 5,6,CLOUD_TILE,1
+    !byte 6,6,CLOUD_TILE,1
+    !byte 7,6,CLOUD_TILE,1
+    !byte 6,5,CLOUD_TILE,1
+    !byte 6,7,CLOUD_TILE,1
+    !byte 23,8,CLOUD_TILE,1
+    !byte 24,8,CLOUD_TILE,1
+    !byte 25,8,CLOUD_TILE,1
+    !byte 24,7,CLOUD_TILE,1
+    !byte 25,7,CLOUD_TILE,1
+cloud_tiles_end:
+
+tree_tile_count = (tree_tiles_end-tree_tiles)/4
+tree_tiles:
+    !byte 3,15,TREE_LEAVES,5
+    !byte 4,15,TREE_LEAVES,5
+    !byte 5,15,TREE_LEAVES,5
+    !byte 4,14,TREE_LEAVES,13
+    !byte 4,13,TREE_LEAVES,13
+    !byte 31,15,TREE_LEAVES,5
+    !byte 32,15,TREE_LEAVES,5
+    !byte 33,15,TREE_LEAVES,5
+    !byte 32,14,TREE_LEAVES,13
+    !byte 32,13,TREE_LEAVES,13
+    !byte 4,16,TREE_TRUNK,9
+    !byte 4,17,TREE_TRUNK,9
+    !byte 4,18,TREE_TRUNK,9
+    !byte 32,16,TREE_TRUNK,9
+    !byte 32,17,TREE_TRUNK,9
+    !byte 32,18,TREE_TRUNK,9
+tree_tiles_end:
+
+graphics_tiles:
+    ; One-pixel stick glyphs, platform grass and rocky soil.
+    !byte $10,$10,$10,$10,$10,$10,$10,$10
+    !byte $00,$00,$00,$ff,$00,$00,$00,$00
+    !byte $18,$3c,$18,$7e,$ff,$db,$ff,$7e
+    !byte $ff,$aa,$d5,$ff,$aa,$55,$ff,$7e
+    !byte $ff,$81,$bd,$a5,$bd,$81,$ff,$7e
+    ; Speckled hill fill and two pixel-stepped slope edges.
+    !byte $aa,$55,$aa,$55,$ff,$55,$aa,$ff
+    !byte $00,$00,$c0,$f0,$f8,$fc,$fe,$ff
+    !byte $00,$00,$03,$0f,$1f,$3f,$7f,$ff
+    ; Leaf, trunk, and cloud tiles.
+    !byte $18,$3c,$7e,$db,$ff,$7e,$3c,$18
+    !byte $18,$18,$18,$18,$18,$3c,$3c,$3c
+    !byte $00,$00,$18,$3c,$7e,$ff,$ff,$7e
+graphics_tiles_end:
+
 state:          !byte STATE_WAIT
 retry_armed:    !byte 0
+saved_port:     !byte 0
 score:          !byte 0
 base_x:         !byte 4
 base_w:         !byte 8
@@ -569,3 +875,34 @@ text_index:     !byte 0
 number_work:    !byte 0
 hundreds:       !byte 0
 tens:           !byte 0
+plot_color:     !byte 1
+hero_x_high:    !byte 0
+hill_side_x:    !byte 0
+hill_side_char: !byte 0
+hill_start_x:   !byte 0
+decoration_count: !byte 0
+
+* = $2800
+hero_sprite:
+    !byte $00,$28,$00
+    !byte $00,$aa,$00
+    !byte $00,$aa,$00
+    !byte $00,$aa,$00
+    !byte $03,$ff,$c0
+    !byte $01,$55,$40
+    !byte $02,$55,$80
+    !byte $00,$55,$00
+    !byte $02,$aa,$80
+    !byte $0a,$aa,$a0
+    !byte $0a,$aa,$a0
+    !byte $02,$aa,$80
+    !byte $02,$aa,$80
+    !byte $02,$aa,$80
+    !byte $0a,$00,$a0
+    !byte $0a,$00,$a0
+    !byte $02,$82,$80
+    !byte $02,$82,$80
+    !byte $0a,$82,$a0
+    !byte $2a,$82,$a8
+    !byte $28,$00,$28
+    !byte 0
