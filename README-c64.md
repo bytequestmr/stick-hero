@@ -17,9 +17,10 @@ plays a three-voice SID chord. The stick's pitch rises as it grows, a short
 placement tone plays when released, and a melody accompanies the hero as they
 cross the stick. The hero advances smoothly in two-pixel sprite steps, with
 melody timing independent from movement; the cherry chord also runs without
-pausing the game loop. Horizontal stick sprites overlap slightly at segment
-joins to prevent visual gaps while preserving the exact stick length. Landing
-is checked against the stick's pixel position and the platform's exact edges.
+pausing the game loop. Horizontal stick sprites meet edge-to-edge, and the last
+sprite is masked to the exact remaining pixel length. The walking animation
+stops at the near edge of the target platform. Landing is checked against the
+stick's pixel position and the platform's exact edges.
 To keep the port responsive, the platforms are recentered after each successful
 crossing rather than scrolling a full scene.
 

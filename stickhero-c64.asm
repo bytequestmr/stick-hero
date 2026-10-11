@@ -26,7 +26,7 @@ STATE_OVER = 4
 MAX_STICK = 128
 STICK_SEGMENT = 42
 HORIZONTAL_SEGMENT = 48
-HORIZONTAL_STRIDE = 46
+HORIZONTAL_STRIDE = HORIZONTAL_SEGMENT
 CHERRY_BONUS = 5
 PLATFORM_Y = 21
 HERO_Y = 20
@@ -567,10 +567,14 @@ resolve_stick:
     sta delta_work
     lda stick_len
     clc
-    adc #3
+    adc #5
     lsr
     lsr
     lsr
+    beq stick_tip_offset_ready
+    sec
+    sbc #1
+stick_tip_offset_ready:
     clc
     adc delta_work
     sta stick_tip
@@ -612,8 +616,6 @@ stick_landed:
     lda #1
     sta landed
     lda target_x
-    clc
-    adc #1
     sta move_target
     lda target_w
     lsr
@@ -668,26 +670,17 @@ draw_horizontal_stick_sprites:
     lda #0
     sta full_segments
     lda stick_len
-    cmp #HORIZONTAL_SEGMENT+1
-    bcc horizontal_segment_ready
-    sec
-    sbc #2
+    sta segment_len
 horizontal_count_full:
-    cmp #HORIZONTAL_STRIDE
-    bcc horizontal_segment_ready
+    lda segment_len
+    cmp #HORIZONTAL_SEGMENT+1
+    bcc horizontal_segments_counted
     sec
     sbc #HORIZONTAL_STRIDE
+    sta segment_len
     inc full_segments
     jmp horizontal_count_full
-horizontal_segment_ready:
-    sta segment_len
-    lda full_segments
-    beq horizontal_segment_length_ready
-    lda segment_len
-    clc
-    adc #2
-    sta segment_len
-horizontal_segment_length_ready:
+horizontal_segments_counted:
     jsr get_anchor
     lda anchor_x
     asl
