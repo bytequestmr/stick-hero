@@ -26,6 +26,7 @@ STATE_OVER = 4
 MAX_STICK = 128
 STICK_SEGMENT = 42
 HORIZONTAL_SEGMENT = 48
+HORIZONTAL_STRIDE = 46
 CHERRY_BONUS = 5
 PLATFORM_Y = 21
 HERO_Y = 20
@@ -115,6 +116,7 @@ build_round:
     sta turn_ticks
     sta walk_step_ticks
     sta cherry_sound_ticks
+    sta place_sound_ticks
     sta hero_subpixel
     lda #4
     sta base_x
@@ -364,8 +366,7 @@ begin_turn:
     sta state
     lda #0
     sta turn_ticks
-    lda #$10
-    sta $d404
+    jsr sound_place
     rts
 
 grow_stick:
@@ -383,10 +384,29 @@ grow_done:
 sound_grow:
     lda #0
     sta $d400
-    lda #$20
+    lda stick_len
+    clc
+    adc #$10
     sta $d401
+    lda #$0f
+    sta $d418
     lda #$21
     sta $d404
+    rts
+
+sound_place:
+    lda #$10
+    sta $d404
+    lda #0
+    sta $d400
+    lda #$28
+    sta $d401
+    lda #$0f
+    sta $d418
+    lda #$21
+    sta $d404
+    lda #6
+    sta place_sound_ticks
     rts
 
 hide_stick_sprites:
@@ -526,6 +546,13 @@ vertical_sprites_done:
 
 update_turn:
     inc turn_ticks
+    lda place_sound_ticks
+    beq turn_sound_done
+    dec place_sound_ticks
+    bne turn_sound_done
+    lda #$10
+    sta $d404
+turn_sound_done:
     lda turn_ticks
     cmp #8
     bcc turn_done
@@ -614,8 +641,7 @@ start_walking:
     lda #0
     sta walk_step_ticks
     sta walk_note_index
-    lda #$11
-    sta $d40b
+    jsr sound_walk_step
     rts
 
 draw_horizontal_stick_sprites:
@@ -642,19 +668,26 @@ draw_horizontal_stick_sprites:
     lda #0
     sta full_segments
     lda stick_len
-    sec
-    sbc #1
-horizontal_count_full:
-    cmp #HORIZONTAL_SEGMENT
+    cmp #HORIZONTAL_SEGMENT+1
     bcc horizontal_segment_ready
     sec
-    sbc #HORIZONTAL_SEGMENT
+    sbc #2
+horizontal_count_full:
+    cmp #HORIZONTAL_STRIDE
+    bcc horizontal_segment_ready
+    sec
+    sbc #HORIZONTAL_STRIDE
     inc full_segments
     jmp horizontal_count_full
 horizontal_segment_ready:
-    clc
-    adc #1
     sta segment_len
+    lda full_segments
+    beq horizontal_segment_length_ready
+    lda segment_len
+    clc
+    adc #2
+    sta segment_len
+horizontal_segment_length_ready:
     jsr get_anchor
     lda anchor_x
     asl
@@ -680,7 +713,7 @@ horizontal_full_segments:
     sta sprite_mask_work
     lda sprite_x_work
     clc
-    adc #HORIZONTAL_SEGMENT
+    adc #HORIZONTAL_STRIDE
     sta sprite_x_work
     inx
     inx
@@ -725,6 +758,7 @@ horizontal_mask_store:
     iny
     cpy #3
     bcc horizontal_mask_byte
+horizontal_segments_done:
     lda $d010
     and #$e1
     sta $d010
@@ -791,6 +825,8 @@ cherry_collect_done:
 sound_cherry:
     lda #20
     sta cherry_sound_ticks
+    lda #$0f
+    sta $d418
     lda #$60
     sta $d400
     lda #$22
@@ -803,7 +839,7 @@ sound_cherry:
     sta $d40e
     lda #$33
     sta $d40f
-    lda #$11
+    lda #$21
     sta $d404
     sta $d40b
     sta $d412
@@ -852,6 +888,10 @@ sound_walk_step:
     sta $d407
     lda walk_note_high,x
     sta $d408
+    lda #$0f
+    sta $d418
+    lda #$21
+    sta $d40b
     inx
     txa
     and #$03
@@ -1477,6 +1517,7 @@ threshold_work: !byte 0
 walk_step_ticks: !byte 0
 walk_note_index: !byte 0
 cherry_sound_ticks: !byte 0
+place_sound_ticks: !byte 0
 
 * = $2800
 hero_sprite:
