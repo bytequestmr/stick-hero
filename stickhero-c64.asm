@@ -668,26 +668,17 @@ draw_horizontal_stick_sprites:
     lda #0
     sta full_segments
     lda stick_len
-    cmp #HORIZONTAL_SEGMENT+1
-    bcc horizontal_segment_ready
-    sec
-    sbc #2
+    sta segment_len
 horizontal_count_full:
-    cmp #HORIZONTAL_STRIDE
-    bcc horizontal_segment_ready
+    lda segment_len
+    cmp #HORIZONTAL_SEGMENT+1
+    bcc horizontal_segments_counted
     sec
     sbc #HORIZONTAL_STRIDE
+    sta segment_len
     inc full_segments
     jmp horizontal_count_full
-horizontal_segment_ready:
-    sta segment_len
-    lda full_segments
-    beq horizontal_segment_length_ready
-    lda segment_len
-    clc
-    adc #2
-    sta segment_len
-horizontal_segment_length_ready:
+horizontal_segments_counted:
     jsr get_anchor
     lda anchor_x
     asl
