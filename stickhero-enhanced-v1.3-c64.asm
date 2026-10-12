@@ -152,23 +152,11 @@ spawn_cherry:
     bne cherry_spawn_done
     lda stick_len
     clc
-    adc #3
+    adc #8
     lsr
     lsr
     lsr
-    sta delta_work
-    jsr random_byte
-    and #$03
-    cmp #3
-    bcc cherry_offset_ready
-    lda #2
-cherry_offset_ready:
-    clc
-    adc #4
-    cmp delta_work
-    bcc cherry_offset_in_range
-    lda delta_work
-cherry_offset_in_range:
+    lsr
     clc
     adc hero_x
     sta cherry_x
