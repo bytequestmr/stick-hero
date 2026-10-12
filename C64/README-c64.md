@@ -1,4 +1,4 @@
-# Stick Hero Enhanced V1.8 - C64 port
+# Stick Hero Enhanced V1.9 - C64 port
 
 This is a small Commodore 64 text-mode adaptation of the core game in
 [`bytequestmr/stick-hero`](https://github.com/bytequestmr/stick-hero): hold
@@ -6,7 +6,7 @@ joystick 2's fire button to grow a stick, release it to turn the stick, and
 cross the gap to the next platform. A center hit is worth two points; other
 successful landings are worth one. Missing a platform ends the game.
 
-Enhanced V1.8 overlaps adjoining expanded stick segments by one pixel and
+Enhanced V1.9 overlaps adjoining expanded stick segments by one pixel and
 compensates the final pixel-masked segment so the stick still ends at its exact
 gameplay length. A hero who reaches the far platform while ducking falls.
 Sticks that are too short or extend past the far edge also cause a fall. Game
@@ -27,7 +27,9 @@ central sky below the score and controls. They gently bob vertically at
 different phases, while their positions and the tree positions change with
 each new scene. Each tree trunk follows its canopy's horizontal shift to remain
 centered beneath it. The slim hero and pixel-precise stick are VIC-II hardware
-sprites.
+sprites. Occasionally, a small bird flies across the sky; its wings flap as it
+moves, and it temporarily takes the place of one cloud sprite. Its flight is
+scheduled at irregular intervals and it flies from left to right.
 The stick starts at the hero's right side and draws in front of the scenery.
 Cherries occasionally appear beneath the placed stick; collecting one while
 ducking underneath adds five points and plays a three-voice SID chord. The
@@ -50,18 +52,18 @@ vary between screens to keep the city and beach scenes from repeating.
 
 ## Build and run
 
-The prebuilt `stickhero-enhanced-v1.8-c64.prg` can be loaded directly in a C64
+The prebuilt `stickhero-enhanced-v1.9-c64.prg` can be loaded directly in a C64
 or emulator.
 To rebuild it from source:
 
 1. Install the ACME 6502 assembler.
-2. Assemble `stickhero-enhanced-v1.8-c64.asm`:
+2. Assemble `stickhero-enhanced-v1.9-c64.asm`:
 
    ```text
-   acme stickhero-enhanced-v1.8-c64.asm
+   acme stickhero-enhanced-v1.9-c64.asm
    ```
 
-   This creates `stickhero-enhanced-v1.8-c64.prg` in the current directory.
+   This creates `stickhero-enhanced-v1.9-c64.prg` in the current directory.
 3. Load the PRG from disk or an emulator, then run it with `RUN`.
 4. Use joystick port 2. Hold fire to grow the stick and release to place it.
    A cherry may appear as the stick starts to grow; it tracks the stick's
