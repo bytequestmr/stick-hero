@@ -150,6 +150,15 @@ spawn_cherry:
     jsr random_byte
     and #$03
     bne cherry_spawn_done
+    lda #1
+    sta cherry_active
+    jsr update_cherry_position
+cherry_spawn_done:
+    rts
+
+update_cherry_position:
+    lda cherry_active
+    beq cherry_position_done
     lda stick_len
     clc
     adc #8
@@ -174,9 +183,7 @@ spawn_cherry:
     lda $d015
     ora #$20
     sta $d015
-    lda #1
-    sta cherry_active
-cherry_spawn_done:
+cherry_position_done:
     rts
 
 hide_cherry:
@@ -368,6 +375,7 @@ wait_check_fire:
     beq wait_done
     lda #STATE_GROW
     sta state
+    jsr spawn_cherry
     jsr grow_stick
 wait_done:
     rts
@@ -393,6 +401,7 @@ grow_stick:
     adc #2
     sta stick_len
     jsr draw_vertical_stick_sprites
+    jsr update_cherry_position
     jsr sound_grow
 grow_done:
     rts
@@ -662,9 +671,9 @@ start_walking:
     sta hero_under_stick
     sta walk_fire_armed
     lda landed
-    beq walking_without_cherry
-    jsr spawn_cherry
-walking_without_cherry:
+    bne walking_with_cherry
+    jsr hide_cherry
+walking_with_cherry:
     jsr sound_walk_step
     rts
 

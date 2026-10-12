@@ -49,9 +49,10 @@ To rebuild it from source:
    This creates `stickhero-enhanced-v1.3-c64.prg` in the current directory.
 3. Load the PRG from disk or an emulator, then run it with `RUN`.
 4. Use joystick port 2. Hold fire to grow the stick and release to place it.
-   While walking, tap fire to duck under the stick for a cherry and tap fire
-   again to return above it. After a miss, press fire to restart, release it,
-   then press again to grow the stick.
+   A cherry may appear as the stick starts to grow; it tracks the stick's
+   midpoint. While walking, tap fire to duck under the stick for the cherry
+   and tap fire again to return above it. After a miss, press fire to restart,
+   release it, then press again to grow the stick.
 
 The game disables KERNAL interrupts while it runs because the KERNAL IRQ
 handler reuses zero-page memory used by the game's indirect pointers. Reset the
