@@ -717,8 +717,8 @@ horizontal_segments_counted:
     asl
     asl
     asl
-    sec
-    sbc #3
+    clc
+    adc #11
     sta sprite_x_work
     lda #$02
     sta sprite_mask_work
@@ -1187,6 +1187,7 @@ draw_scene:
     lda #>blank_line
     sta text_ptr+1
     jsr draw_text
+    jsr randomize_background
     jsr draw_hills
     jsr draw_clouds
     jsr draw_trees
@@ -1203,6 +1204,27 @@ draw_scene:
     sta platform_w
     jsr draw_platform
     jsr draw_hero
+    rts
+
+randomize_background:
+    jsr random_byte
+    and #$03
+    sta hill_left_offset
+    jsr random_byte
+    and #$03
+    sta hill_right_offset
+    jsr random_byte
+    and #$07
+    sta cloud_left_x_offset
+    jsr random_byte
+    and #$03
+    sta cloud_left_y_offset
+    jsr random_byte
+    and #$07
+    sta cloud_right_x_offset
+    jsr random_byte
+    and #$03
+    sta cloud_right_y_offset
     rts
 
 draw_hills:
@@ -1233,6 +1255,28 @@ draw_hill_loop:
     sta hill_side_char
     iny
     sty text_index
+    lda text_index
+    cmp #63
+    bcs draw_right_hill_row
+    lda draw_x
+    clc
+    adc hill_left_offset
+    sta draw_x
+    lda hill_side_x
+    clc
+    adc hill_left_offset
+    sta hill_side_x
+    jmp draw_hill_row_ready
+draw_right_hill_row:
+    lda draw_x
+    sec
+    sbc hill_right_offset
+    sta draw_x
+    lda hill_side_x
+    sec
+    sbc hill_right_offset
+    sta hill_side_x
+draw_hill_row_ready:
     jsr fill_hill_segment
     lda hill_side_x
     sta draw_x
@@ -1260,9 +1304,51 @@ draw_clouds:
     sta text_ptr
     lda #>cloud_tiles
     sta text_ptr+1
-    lda #cloud_tile_count
-    sta decoration_count
-    jmp draw_decoration_tiles
+    lda #0
+    sta text_index
+    ldx #cloud_tile_count
+draw_cloud_loop:
+    ldy text_index
+    lda (text_ptr),y
+    sta draw_x
+    iny
+    lda (text_ptr),y
+    sta draw_y
+    iny
+    lda (text_ptr),y
+    sta draw_char
+    iny
+    lda (text_ptr),y
+    sta plot_color
+    iny
+    sty text_index
+    lda text_index
+    cmp #24
+    bcs draw_right_cloud_tile
+    lda draw_x
+    clc
+    adc cloud_left_x_offset
+    sta draw_x
+    lda draw_y
+    clc
+    adc cloud_left_y_offset
+    sta draw_y
+    jmp draw_cloud_tile
+draw_right_cloud_tile:
+    lda draw_x
+    clc
+    adc cloud_right_x_offset
+    sta draw_x
+    lda draw_y
+    clc
+    adc cloud_right_y_offset
+    sta draw_y
+draw_cloud_tile:
+    lda draw_char
+    jsr plot
+    dex
+    bne draw_cloud_loop
+    rts
 
 draw_trees:
     lda #<tree_tiles
@@ -1583,6 +1669,12 @@ anchor_x:       !byte 0
 gap_size:       !byte 0
 fire_pressed:   !byte 0
 random_seed:    !byte $a5
+hill_left_offset: !byte 0
+hill_right_offset: !byte 0
+cloud_left_x_offset: !byte 0
+cloud_left_y_offset: !byte 0
+cloud_right_x_offset: !byte 0
+cloud_right_y_offset: !byte 0
 platform_x:     !byte 0
 platform_w:     !byte 0
 segment_count:  !byte 0

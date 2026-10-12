@@ -31,7 +31,9 @@ the last sprite is masked to the exact remaining pixel length. The walking
 animation stops at the near edge of the target platform. Landing is checked
 against the stick's pixel position and the platform's exact edges.
 To keep the port responsive, the platforms are recentered after each successful
-crossing rather than scrolling a full scene.
+crossing rather than scrolling a full scene. The distant hills and clouds shift
+to new positions as each scene is drawn, giving each crossing a slightly
+different background.
 
 ## Build and run
 
