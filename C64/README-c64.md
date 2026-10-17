@@ -6,7 +6,9 @@ joystick 2's fire button to grow a stick, release it to turn the stick, and
 cross the gap to the next platform. A center hit is worth two points; other
 successful landings are worth one. Missing a platform ends the game.
 
-Enhanced V1.11 shows the title line at the top in a subtler gray and fixes the
+Enhanced V1.11 shows the title line at the top in a subtler gray, replaces the
+text glyphs (A-Z, 0-9 and the punctuation used by the HUD) with a compact 5x6
+font, and fixes the
 hero's first-screen and restart position: it now stands on the platform instead
 of sunk into it.
 
