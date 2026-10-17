@@ -1,10 +1,12 @@
-# Stick Hero Enhanced V1.16 - C64 port
+# Stick Hero Enhanced V1.17 - C64 port
 
 This is a small Commodore 64 text-mode adaptation of the core game in
 [`bytequestmr/stick-hero`](https://github.com/bytequestmr/stick-hero): hold
 joystick 2's fire button to grow a stick, release it to turn the stick, and
 cross the gap to the next platform. A center hit is worth two points; other
 successful landings are worth one. Missing a platform ends the game.
+
+Enhanced V1.17 adds a fourth scene: after another 10 screens following the beach (30 screens after the start) the background changes to a jungle with a leaf canopy, trunks and hanging vines, and a parrot flies across the screen. The scenes then repeat.
 
 Enhanced V1.16 replaces the bird with a helicopter in the city scene and a seagull on the beach; the nature scene keeps the bird.
 
@@ -78,18 +80,18 @@ repeating.
 
 ## Build and run
 
-The prebuilt `stickhero-enhanced-v1.16-c64.prg` can be loaded directly in a C64
+The prebuilt `stickhero-enhanced-v1.17-c64.prg` can be loaded directly in a C64
 or emulator.
 To rebuild it from source:
 
 1. Install the ACME 6502 assembler.
-2. Assemble `stickhero-enhanced-v1.16-c64.asm`:
+2. Assemble `stickhero-enhanced-v1.17-c64.asm`:
 
    ```text
-   acme stickhero-enhanced-v1.16-c64.asm
+   acme stickhero-enhanced-v1.17-c64.asm
    ```
 
-   This creates `stickhero-enhanced-v1.16-c64.prg` in the current directory.
+   This creates `stickhero-enhanced-v1.17-c64.prg` in the current directory.
 3. Load the PRG from disk or an emulator, then run it with `RUN`.
 4. Use joystick port 2. Hold fire to grow the stick and release to place it.
    A cherry may appear as the stick starts to grow; it tracks the stick's
