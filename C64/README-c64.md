@@ -1,10 +1,28 @@
-# Stick Hero Enhanced V1.12 - C64 port
+# Stick Hero Enhanced V1.17 - C64 port
 
 This is a small Commodore 64 text-mode adaptation of the core game in
 [`bytequestmr/stick-hero`](https://github.com/bytequestmr/stick-hero): hold
 joystick 2's fire button to grow a stick, release it to turn the stick, and
 cross the gap to the next platform. A center hit is worth two points; other
 successful landings are worth one. Missing a platform ends the game.
+
+Enhanced V1.17 adds a fourth scene: after another 10 screens following the beach (30 screens after the start) the background changes to a jungle with a leaf canopy, trunks and hanging vines, and a parrot flies across the screen. The scenes then repeat.
+
+Enhanced V1.16 replaces the bird with a helicopter in the city scene and a seagull on the beach; the nature scene keeps the bird.
+
+Enhanced V1.15 adds a difficulty selection before each game (joystick up/down
+to choose, fire to start; it appears again after Game Over):
+
+- **Easy**: the game as in V1.14.
+- **Normal**: smaller target platforms that also move left and right until the
+  stick is released.
+- **Hard**: like Normal, with a wider gap between the platforms.
+
+Enhanced V1.14 draws the cherry as two larger red berries with a white
+highlight on narrow, curved green stems.
+
+Enhanced V1.13 replaces the text glyphs (A-Z, 0-9 and the punctuation used by
+the HUD) with a compact 4x5 font, so the text at the top is drawn smaller.
 
 Enhanced V1.12 fixes the hero's position on the first screen and after a
 restart: it now stands on the platform instead of sunk into it, and uses the
@@ -20,7 +38,8 @@ Over is highlighted in red, accompanied by a loud three-voice SID chord that
 descends in pitch, and the hero falls over. Cherries appear
 beneath the placed stick; tap fire while walking to duck below it and tap again
 to return above it. The hero sprite is slimmer than in the previous version.
-The smaller cherry is drawn as two red berries with a curved green stem. A
+The cherry is drawn as two large red berries with a white highlight on narrow,
+curved green stems. A
 separate cherry counter appears beside the score and increases once per
 collected cherry; the five-point bonus remains unchanged.
 
@@ -61,18 +80,18 @@ repeating.
 
 ## Build and run
 
-The prebuilt `stickhero-enhanced-v1.12-c64.prg` can be loaded directly in a C64
+The prebuilt `stickhero-enhanced-v1.17-c64.prg` can be loaded directly in a C64
 or emulator.
 To rebuild it from source:
 
 1. Install the ACME 6502 assembler.
-2. Assemble `stickhero-enhanced-v1.12-c64.asm`:
+2. Assemble `stickhero-enhanced-v1.17-c64.asm`:
 
    ```text
-   acme stickhero-enhanced-v1.12-c64.asm
+   acme stickhero-enhanced-v1.17-c64.asm
    ```
 
-   This creates `stickhero-enhanced-v1.12-c64.prg` in the current directory.
+   This creates `stickhero-enhanced-v1.17-c64.prg` in the current directory.
 3. Load the PRG from disk or an emulator, then run it with `RUN`.
 4. Use joystick port 2. Hold fire to grow the stick and release to place it.
    A cherry may appear as the stick starts to grow; it tracks the stick's
