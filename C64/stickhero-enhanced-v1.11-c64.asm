@@ -117,6 +117,7 @@ reset_game:
     sta bird_frame
     lda #90
     sta bird_spawn_delay
+    lda #0
     sta walk_step_ticks
     sta walk_note_index
     sta cherry_sound_ticks
