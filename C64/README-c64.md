@@ -1,4 +1,4 @@
-# Stick Hero Enhanced V1.14 - C64 port
+# Stick Hero Enhanced V1.15 - C64 port
 
 This is a small Commodore 64 text-mode adaptation of the core game in
 [`bytequestmr/stick-hero`](https://github.com/bytequestmr/stick-hero): hold
@@ -6,7 +6,18 @@ joystick 2's fire button to grow a stick, release it to turn the stick, and
 cross the gap to the next platform. A center hit is worth two points; other
 successful landings are worth one. Missing a platform ends the game.
 
-Enhanced V1.14 replaces the text glyphs (A-Z, 0-9 and the punctuation used by
+Enhanced V1.15 adds a difficulty selection before each game (joystick up/down
+to choose, fire to start; it appears again after Game Over):
+
+- **Easy**: the game as in V1.14.
+- **Normal**: smaller target platforms that also move left and right until the
+  stick is released.
+- **Hard**: like Normal, with a wider gap between the platforms.
+
+Enhanced V1.14 draws the cherry as two larger red berries with a white
+highlight on narrow, curved green stems.
+
+Enhanced V1.13 replaces the text glyphs (A-Z, 0-9 and the punctuation used by
 the HUD) with a compact 4x5 font, so the text at the top is drawn smaller.
 
 Enhanced V1.12 fixes the hero's position on the first screen and after a
@@ -65,18 +76,18 @@ repeating.
 
 ## Build and run
 
-The prebuilt `stickhero-enhanced-v1.14-c64.prg` can be loaded directly in a C64
+The prebuilt `stickhero-enhanced-v1.15-c64.prg` can be loaded directly in a C64
 or emulator.
 To rebuild it from source:
 
 1. Install the ACME 6502 assembler.
-2. Assemble `stickhero-enhanced-v1.14-c64.asm`:
+2. Assemble `stickhero-enhanced-v1.15-c64.asm`:
 
    ```text
-   acme stickhero-enhanced-v1.14-c64.asm
+   acme stickhero-enhanced-v1.15-c64.asm
    ```
 
-   This creates `stickhero-enhanced-v1.14-c64.prg` in the current directory.
+   This creates `stickhero-enhanced-v1.15-c64.prg` in the current directory.
 3. Load the PRG from disk or an emulator, then run it with `RUN`.
 4. Use joystick port 2. Hold fire to grow the stick and release to place it.
    A cherry may appear as the stick starts to grow; it tracks the stick's
