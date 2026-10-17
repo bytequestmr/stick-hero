@@ -155,7 +155,7 @@ build_round:
     sta base_x
     lda #8
     sta base_w
-    lda #8
+    lda #9
     sta hero_x
     lda #0
     sta retry_armed
